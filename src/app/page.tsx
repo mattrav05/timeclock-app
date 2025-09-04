@@ -236,7 +236,7 @@ export default function HomePage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [employeeData, setEmployeeData] = useState<EmployeeData | null>(null);
-  const [locationPermission, setLocationPermission] = useState<'pending' | 'granted' | 'denied'>('pending');
+  const [locationPermission, setLocationPermission] = useState<'pending' | 'granted' | 'denied' | 'prompt'>('pending');
   const [elapsedTime, setElapsedTime] = useState('00:00:00');
 
   // Check location permission on mount
