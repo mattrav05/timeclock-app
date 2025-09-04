@@ -302,9 +302,46 @@ export async function isIPAllowed(ipAddress: string): Promise<boolean> {
 }
 
 export async function getAdminPassword(): Promise<string> {
-  const settings = await getSheetData('AdminSettings');
-  const passwordRow = settings.find((row: any) => row.setting === 'adminPassword');
-  return passwordRow?.value || 'admin123';
+  try {
+    const settings = await getSheetData('Settings');
+    const passwordRow = settings.find((row: any) => row.setting === 'adminPassword');
+    return passwordRow?.value || 'admin123';
+  } catch (error) {
+    console.error('Settings sheet not found, creating with default admin password');
+    
+    // Create Settings sheet if it doesn't exist
+    try {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        requestBody: {
+          requests: [{
+            addSheet: {
+              properties: { title: 'Settings' }
+            }
+          }]
+        }
+      });
+      
+      // Add headers and admin password
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: 'Settings!A1:B2',
+        valueInputOption: 'RAW',
+        requestBody: {
+          values: [
+            ['setting', 'value'],
+            ['adminPassword', 'admin123']
+          ]
+        }
+      });
+      
+      console.log('Settings sheet created with admin password');
+      return 'admin123';
+    } catch (createError) {
+      console.error('Failed to create Settings sheet:', createError);
+      return 'admin123'; // Fallback default
+    }
+  }
 }
 
 export async function getAllTimeEntries(): Promise<TimeEntry[]> {
