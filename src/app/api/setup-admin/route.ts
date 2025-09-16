@@ -88,11 +88,11 @@ export async function GET() {
       password: 'admin123'
     });
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error setting up admin password:', error);
-    return Response.json({ 
+    return Response.json({
       error: error.message,
-      success: false 
+      success: false
     }, { status: 500 });
   }
 }

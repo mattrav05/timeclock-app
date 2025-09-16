@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     console.log(`✅ Setting added: ${setting} = ${value}`);
     return Response.json({ success: true, message: `Setting '${setting}' added successfully` });
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error adding setting:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
