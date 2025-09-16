@@ -303,11 +303,16 @@ export async function isIPAllowed(ipAddress: string): Promise<boolean> {
 
 export async function getAdminPassword(): Promise<string> {
   try {
+    console.log('🔍 getAdminPassword: Attempting to fetch from Settings sheet');
     const settings = await getSheetData('Settings');
+    console.log('📊 Settings data:', settings);
     const passwordRow = settings.find((row: any) => row.setting === 'adminPassword');
-    return passwordRow?.value || 'admin123';
+    console.log('🔑 Password row found:', passwordRow);
+    const password = passwordRow?.value || 'admin123';
+    console.log('✅ Returning password:', password);
+    return password;
   } catch (error) {
-    console.error('Settings sheet not found, creating with default admin password');
+    console.error('⚠️ Settings sheet not found, will try to create or use fallback');
     
     // Create Settings sheet if it doesn't exist
     try {

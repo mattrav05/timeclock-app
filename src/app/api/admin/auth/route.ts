@@ -7,18 +7,36 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { password } = body;
 
+    console.log('🔐 Auth attempt received');
+    console.log('📝 Provided password:', password);
+
     if (!password) {
+      console.log('❌ No password provided');
       return NextResponse.json({ error: 'Password is required' }, { status: 400 });
     }
 
+    console.log('📊 Fetching admin password from Google Sheets...');
     const adminPassword = await getAdminPassword();
-    
+    console.log('✅ Admin password retrieved:', adminPassword);
+    console.log('🔍 Password comparison:');
+    console.log('  - Provided:', password);
+    console.log('  - Expected:', adminPassword);
+    console.log('  - Match:', password === adminPassword);
+
     // For simplicity, we're doing plain text comparison
     // In production, you should hash the stored password
     const isValid = password === adminPassword;
 
     if (!isValid) {
-      return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
+      console.log('❌ Authentication failed - passwords do not match');
+      return NextResponse.json({
+        error: 'Invalid password',
+        debug: {
+          provided: password,
+          expected: adminPassword,
+          match: false
+        }
+      }, { status: 401 });
     }
 
     // Create a simple token (in production, use JWT)
@@ -37,12 +55,18 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 24, // 24 hours
     });
 
+    console.log('✅ Authentication successful!');
     return response;
 
   } catch (error) {
-    console.error('Admin auth error:', error);
+    console.error('❌ Admin auth error:', error);
+    console.error('Full error details:', JSON.stringify(error, null, 2));
     return NextResponse.json(
-      { error: 'Authentication failed' },
+      {
+        error: 'Authentication failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     );
   }
