@@ -1,16 +1,34 @@
 import { google } from 'googleapis';
 
-const auth = new google.auth.GoogleAuth({
-  credentials: {
-    client_email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
-    private_key: process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-  },
-  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-});
+// Check for required environment variables
+if (!process.env.GOOGLE_SHEETS_CLIENT_EMAIL) {
+  console.error('❌ Missing GOOGLE_SHEETS_CLIENT_EMAIL environment variable');
+}
+if (!process.env.GOOGLE_SHEETS_PRIVATE_KEY) {
+  console.error('❌ Missing GOOGLE_SHEETS_PRIVATE_KEY environment variable');
+}
+if (!process.env.SPREADSHEET_ID) {
+  console.error('❌ Missing SPREADSHEET_ID environment variable');
+}
 
-const sheets = google.sheets({ version: 'v4', auth });
+let auth: any;
+let sheets: any;
 
-export const SPREADSHEET_ID = process.env.SPREADSHEET_ID!;
+try {
+  auth = new google.auth.GoogleAuth({
+    credentials: {
+      client_email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
+      private_key: process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    },
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+
+  sheets = google.sheets({ version: 'v4', auth });
+} catch (error) {
+  console.error('❌ Failed to initialize Google Sheets client:', error);
+}
+
+export const SPREADSHEET_ID = process.env.SPREADSHEET_ID || 'NOT_SET';
 
 export interface TimeEntry {
   employeeId: string;
@@ -63,14 +81,22 @@ export interface JobSite {
 
 export async function getSheetData(sheetName: string) {
   try {
+    if (!sheets) {
+      throw new Error('Google Sheets client not initialized. Check environment variables.');
+    }
+
+    if (SPREADSHEET_ID === 'NOT_SET') {
+      throw new Error('SPREADSHEET_ID environment variable is not set');
+    }
+
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: `${sheetName}!A:Z`,
     });
-    
+
     const rows = response.data.values;
     if (!rows || rows.length === 0) return [];
-    
+
     const headers = rows[0];
     return rows.slice(1).map(row => {
       const obj: any = {};
@@ -79,14 +105,27 @@ export async function getSheetData(sheetName: string) {
       });
       return obj;
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error reading sheet ${sheetName}:`, error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      status: error.status
+    });
     throw error;
   }
 }
 
 export async function appendToSheet(sheetName: string, values: any[][]) {
   try {
+    if (!sheets) {
+      throw new Error('Google Sheets client not initialized. Check environment variables.');
+    }
+
+    if (SPREADSHEET_ID === 'NOT_SET') {
+      throw new Error('SPREADSHEET_ID environment variable is not set');
+    }
+
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
       range: `${sheetName}!A:Z`,
@@ -96,8 +135,13 @@ export async function appendToSheet(sheetName: string, values: any[][]) {
       },
     });
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error appending to sheet ${sheetName}:`, error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      status: error.status
+    });
     throw error;
   }
 }
@@ -303,6 +347,17 @@ export async function isIPAllowed(ipAddress: string): Promise<boolean> {
 
 export async function getAdminPassword(): Promise<string> {
   try {
+    // Check if sheets client is initialized
+    if (!sheets) {
+      console.error('❌ Google Sheets not initialized, using fallback password');
+      return 'admin123';
+    }
+
+    if (SPREADSHEET_ID === 'NOT_SET') {
+      console.error('❌ SPREADSHEET_ID not set, using fallback password');
+      return 'admin123';
+    }
+
     console.log('🔍 getAdminPassword: Attempting to fetch from Settings sheet');
     const settings = await getSheetData('Settings');
     console.log('📊 Settings data:', settings);
@@ -311,39 +366,45 @@ export async function getAdminPassword(): Promise<string> {
     const password = passwordRow?.value || 'admin123';
     console.log('✅ Returning password:', password);
     return password;
-  } catch (error) {
-    console.error('⚠️ Settings sheet not found, will try to create or use fallback');
+  } catch (error: any) {
+    console.error('⚠️ Error accessing Settings sheet:', error.message);
+    console.error('⚠️ Will try to create or use fallback');
     
     // Create Settings sheet if it doesn't exist
     try {
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId: SPREADSHEET_ID,
-        requestBody: {
-          requests: [{
-            addSheet: {
-              properties: { title: 'Settings' }
-            }
-          }]
-        }
-      });
-      
-      // Add headers and admin password
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
-        range: 'Settings!A1:B2',
-        valueInputOption: 'RAW',
-        requestBody: {
-          values: [
-            ['setting', 'value'],
-            ['adminPassword', 'admin123']
-          ]
-        }
-      });
-      
-      console.log('Settings sheet created with admin password');
-      return 'admin123';
-    } catch (createError) {
-      console.error('Failed to create Settings sheet:', createError);
+      if (sheets && SPREADSHEET_ID !== 'NOT_SET') {
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId: SPREADSHEET_ID,
+          requestBody: {
+            requests: [{
+              addSheet: {
+                properties: { title: 'Settings' }
+              }
+            }]
+          }
+        });
+
+        // Add headers and admin password
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: SPREADSHEET_ID,
+          range: 'Settings!A1:B2',
+          valueInputOption: 'RAW',
+          requestBody: {
+            values: [
+              ['setting', 'value'],
+              ['adminPassword', 'admin123']
+            ]
+          }
+        });
+
+        console.log('✅ Settings sheet created with admin password');
+        return 'admin123';
+      } else {
+        console.log('⚠️ Cannot create Settings sheet - sheets client not initialized');
+        return 'admin123';
+      }
+    } catch (createError: any) {
+      console.error('Failed to create Settings sheet:', createError.message);
       return 'admin123'; // Fallback default
     }
   }
