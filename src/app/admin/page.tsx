@@ -338,7 +338,14 @@ export default function AdminDashboard() {
                 <tbody>
                   {dashboardData.employeeSummaries.map(emp => (
                     <tr key={emp.id} className="border-b">
-                      <td className="py-2 text-sm font-semibold" style={{ color: '#000000' }}>{emp.name}</td>
+                      <td className="py-2 text-sm font-semibold" style={{ color: '#000000' }}>
+                        <a
+                          href={`/admin/employees/${emp.id}/timecard`}
+                          className="hover:text-blue-600 hover:underline cursor-pointer"
+                        >
+                          {emp.name}
+                        </a>
+                      </td>
                       <td className="py-2 text-center">
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           emp.status === 'clocked_in' 
