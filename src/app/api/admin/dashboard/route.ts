@@ -12,7 +12,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const employees = await getAllEmployees();
+    const allEmployees = await getAllEmployees();
+    const employees = allEmployees.filter(emp => emp.isActive); // Only include active employees
+
     const allEntries = await getAllTimeEntries();
     
     // Get currently clocked in employees

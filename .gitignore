@@ -48,3 +48,8 @@ setup-complete.js
 configure-spreadsheet.js
 test-api.js
 update-*.js
+.env*.local
+
+# Google Cloud service account JSON files (contain secrets)
+timetracker-*.json
+test-*.js

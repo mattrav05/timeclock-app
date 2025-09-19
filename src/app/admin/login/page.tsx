@@ -7,16 +7,12 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setDebugInfo(null);
     setLoading(true);
-
-    console.log('🔑 Attempting login with password:', password);
 
     try {
       const res = await fetch('/api/admin/auth', {
@@ -26,16 +22,13 @@ export default function AdminLoginPage() {
       });
 
       const data = await res.json();
-      console.log('📬 Response received:', { status: res.status, data });
 
       if (!res.ok) {
-        setDebugInfo(data.debug || data);
         throw new Error(data.error || 'Authentication failed');
       }
 
       router.push('/admin');
     } catch (err: any) {
-      console.error('❌ Login error:', err);
       setError(err.message || 'Failed to login');
     } finally {
       setLoading(false);
@@ -69,18 +62,6 @@ export default function AdminLoginPage() {
             {error && (
               <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
                 {error}
-              </div>
-            )}
-
-            {debugInfo && (
-              <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 rounded-lg">
-                <p className="text-yellow-800 font-semibold mb-2">Debug Information:</p>
-                <div className="text-xs text-yellow-700 font-mono">
-                  <p>Provided: {debugInfo.provided}</p>
-                  <p>Expected: {debugInfo.expected}</p>
-                  <p>Match: {debugInfo.match ? 'true' : 'false'}</p>
-                  {debugInfo.details && <p className="mt-2">Details: {debugInfo.details}</p>}
-                </div>
               </div>
             )}
 

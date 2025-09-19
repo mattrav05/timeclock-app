@@ -79,7 +79,7 @@ export async function getSheetData(sheetName: string) {
       });
       return obj;
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error reading sheet ${sheetName}:`, error);
     throw error;
   }
@@ -359,4 +359,100 @@ export async function getAllTimeEntries(): Promise<TimeEntry[]> {
     editedBy: row.editedBy || '',
     notes: row.notes || '',
   }));
+}
+
+export interface AuditLogEntry {
+  timestamp: string;
+  adminUser: string;
+  action: string;
+  employeeId: string;
+  employeeName: string;
+  details: string;
+  originalData?: string;
+  newData?: string;
+}
+
+export async function addAuditLogEntry(entry: Omit<AuditLogEntry, 'timestamp'>) {
+  try {
+    const timestamp = new Date().toISOString();
+    const values = [[
+      timestamp,
+      entry.adminUser,
+      entry.action,
+      entry.employeeId,
+      entry.employeeName,
+      entry.details,
+      entry.originalData || '',
+      entry.newData || ''
+    ]];
+
+    return await appendToSheet('AuditLog', values);
+  } catch (error) {
+    // If AuditLog sheet doesn't exist, create it
+    console.log('AuditLog sheet does not exist, creating...');
+    try {
+      await createAuditLogSheet();
+      // Retry adding the entry
+      const timestamp = new Date().toISOString();
+      const values = [[
+        timestamp,
+        entry.adminUser,
+        entry.action,
+        entry.employeeId,
+        entry.employeeName,
+        entry.details,
+        entry.originalData || '',
+        entry.newData || ''
+      ]];
+      return await appendToSheet('AuditLog', values);
+    } catch (createError) {
+      console.error('Failed to create AuditLog sheet:', createError);
+      throw createError;
+    }
+  }
+}
+
+async function createAuditLogSheet() {
+  // Create the sheet
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId: SPREADSHEET_ID,
+    requestBody: {
+      requests: [{
+        addSheet: {
+          properties: {
+            title: 'AuditLog'
+          }
+        }
+      }]
+    }
+  });
+
+  // Add headers
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range: 'AuditLog!A1:H1',
+    valueInputOption: 'USER_ENTERED',
+    requestBody: {
+      values: [['timestamp', 'adminUser', 'action', 'employeeId', 'employeeName', 'details', 'originalData', 'newData']]
+    }
+  });
+}
+
+export async function getAuditLog(): Promise<AuditLogEntry[]> {
+  try {
+    const data = await getSheetData('AuditLog');
+    return data.map((row: any) => ({
+      timestamp: row.timestamp,
+      adminUser: row.adminUser,
+      action: row.action,
+      employeeId: row.employeeId,
+      employeeName: row.employeeName,
+      details: row.details,
+      originalData: row.originalData || '',
+      newData: row.newData || ''
+    }));
+  } catch (error) {
+    console.log('AuditLog sheet does not exist yet');
+    return [];
+  }
 }

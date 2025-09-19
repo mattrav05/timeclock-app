@@ -19,16 +19,18 @@ export async function GET(request: NextRequest) {
 
     // Get raw data to include passwords
     const employeesData = await getSheetData('Employees');
-    const employees = employeesData.map((row: any) => ({
-      id: row.id,
-      name: row.name,
-      isActive: row.isActive?.toLowerCase() === 'true',
-      currentStatus: row.currentStatus,
-      lastClockIn: row.lastClockIn || '',
-      lastClockOut: row.lastClockOut || '',
-      password: row.displayPassword || row.password || 'password123' // Show display password for admin viewing
-    }));
-    
+    const employees = employeesData
+      .filter((row: any) => row.isActive?.toLowerCase() === 'true') // Only return active employees
+      .map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        isActive: row.isActive?.toLowerCase() === 'true',
+        currentStatus: row.currentStatus,
+        lastClockIn: row.lastClockIn || '',
+        lastClockOut: row.lastClockOut || '',
+        password: row.displayPassword || row.password || 'password123' // Show display password for admin viewing
+      }));
+
     return NextResponse.json({ employees });
 
   } catch (error) {
