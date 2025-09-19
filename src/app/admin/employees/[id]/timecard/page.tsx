@@ -226,7 +226,16 @@ function EditEntryModal({
 
   const handleSave = () => {
     if (formData) {
-      onSave(formData);
+      // Convert datetime-local format to ISO format
+      const clockInISO = formData.clockInTime ? new Date(formData.clockInTime).toISOString() : '';
+      const clockOutISO = formData.clockOutTime ? new Date(formData.clockOutTime).toISOString() : '';
+
+      onSave({
+        ...formData,
+        clockInTime: clockInISO,
+        clockOutTime: clockOutISO,
+        originalClockInTime: entry.clockInTime // Keep original for API update
+      });
     }
   };
 
@@ -321,12 +330,16 @@ function AddEntryModal({
   if (!date) return null;
 
   const handleSave = () => {
+    // Convert datetime-local format to ISO format
+    const clockInISO = formData.clockInTime ? new Date(formData.clockInTime).toISOString() : '';
+    const clockOutISO = formData.clockOutTime ? new Date(formData.clockOutTime).toISOString() : '';
+
     onSave({
       employeeId,
       employeeName,
       date: formData.date,
-      clockInTime: formData.clockInTime,
-      clockOutTime: formData.clockOutTime,
+      clockInTime: clockInISO,
+      clockOutTime: clockOutISO,
       notes: formData.notes,
       isEdited: true,
       editedBy: 'admin'
