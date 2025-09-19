@@ -383,7 +383,16 @@ export default function AdminDashboard() {
                 {dashboardData.recentEntries.map((entry, index) => (
                   <tr key={index} className="border-b">
                     <td className="py-2 text-sm text-black font-medium">{entry.employeeName}</td>
-                    <td className="py-2 text-sm text-black">{format(new Date(entry.date), 'MMM d')}</td>
+                    <td className="py-2 text-sm text-black">
+                      {entry.date ? (() => {
+                        try {
+                          const date = new Date(entry.date);
+                          return isNaN(date.getTime()) ? entry.date : format(date, 'MMM d');
+                        } catch {
+                          return entry.date;
+                        }
+                      })() : ''}
+                    </td>
                     <td className="py-2 text-sm text-black">{formatDateTime(entry.clockInTime)}</td>
                     <td className="py-2 text-sm text-black">
                       {entry.clockOutTime ? formatDateTime(entry.clockOutTime) : 
