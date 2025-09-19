@@ -233,8 +233,7 @@ function EditEntryModal({
       onSave({
         ...formData,
         clockInTime: clockInISO,
-        clockOutTime: clockOutISO,
-        originalClockInTime: entry.clockInTime // Keep original for API update
+        clockOutTime: clockOutISO
       });
     }
   };
@@ -460,7 +459,13 @@ export default function EmployeeTimecardPage({ params }: { params: Promise<{ id:
       const res = await fetch(`/api/admin/employees/${id}/timecard`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'edit', entryData: updatedEntry })
+        body: JSON.stringify({
+          action: 'edit',
+          entryData: {
+            ...updatedEntry,
+            originalClockInTime: editingEntry?.clockInTime // Use the original entry's clock in time
+          }
+        })
       });
 
       if (!res.ok) throw new Error('Failed to update entry');
