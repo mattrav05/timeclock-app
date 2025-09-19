@@ -13,7 +13,7 @@ import { validateAdminToken } from '@/lib/adminAuth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.cookies.get('admin-token')?.value;
@@ -21,7 +21,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const employeeId = params.id;
+    const { id: employeeId } = await params;
     const entries = await getTimeEntriesByEmployee(employeeId);
 
     return NextResponse.json({ entries });
@@ -37,7 +37,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.cookies.get('admin-token')?.value;
@@ -47,7 +47,7 @@ export async function PUT(
 
     const body = await request.json();
     const { action, entryData } = body;
-    const employeeId = params.id;
+    const { id: employeeId } = await params;
 
     if (action === 'edit') {
       const { originalClockInTime, ...updates } = entryData;
