@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, startOfWeek, addDays, isSameDay, parseISO } from 'date-fns';
 import { formatTime, formatHoursForDisplay } from '@/lib/utils';
@@ -391,8 +391,8 @@ function AddEntryModal({
   );
 }
 
-export default function EmployeeTimecardPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function EmployeeTimecardPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
