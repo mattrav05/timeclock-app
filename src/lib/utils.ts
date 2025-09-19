@@ -34,8 +34,15 @@ export function calculateHours(clockIn: string, clockOut: string): number {
 }
 
 export function formatTime(dateString: string): string {
-  if (!dateString) return '';
-  return format(parseISO(dateString), 'h:mm a');
+  if (!dateString || dateString.trim() === '') return '';
+  try {
+    const date = parseISO(dateString);
+    if (isNaN(date.getTime())) return '';
+    return format(date, 'h:mm a');
+  } catch (error) {
+    console.warn('Invalid date string:', dateString);
+    return '';
+  }
 }
 
 export function formatDate(dateString: string): string {

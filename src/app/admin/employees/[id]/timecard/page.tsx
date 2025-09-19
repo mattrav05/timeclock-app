@@ -50,10 +50,20 @@ function WeeklyTimecardAdmin({
       isToday: isSameDay(day, today),
       entries: entries
         .filter(entry => {
-          const entryDate = new Date(entry.date + 'T00:00:00');
-          return isSameDay(entryDate, day);
+          if (!entry.date) return false;
+          try {
+            const entryDate = new Date(entry.date + 'T00:00:00');
+            return !isNaN(entryDate.getTime()) && isSameDay(entryDate, day);
+          } catch (error) {
+            console.warn('Invalid entry date:', entry.date);
+            return false;
+          }
         })
-        .sort((a, b) => new Date(a.clockInTime).getTime() - new Date(b.clockInTime).getTime())
+        .sort((a, b) => {
+          const dateA = a.clockInTime ? new Date(a.clockInTime).getTime() : 0;
+          const dateB = b.clockInTime ? new Date(b.clockInTime).getTime() : 0;
+          return dateA - dateB;
+        })
     };
   });
 
