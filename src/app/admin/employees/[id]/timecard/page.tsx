@@ -434,10 +434,10 @@ export default function EmployeeTimecardPage({ params }: { params: Promise<{ id:
 
   const handleSaveEdit = async (updatedEntry: TimeEntry) => {
     try {
-      const res = await fetch(`/api/admin/timecard`, {
+      const res = await fetch(`/api/admin/employees/${id}/timecard`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedEntry)
+        body: JSON.stringify({ action: 'edit', entryData: updatedEntry })
       });
 
       if (!res.ok) throw new Error('Failed to update entry');
@@ -453,12 +453,12 @@ export default function EmployeeTimecardPage({ params }: { params: Promise<{ id:
     if (!confirm('Are you sure you want to delete this time entry?')) return;
 
     try {
-      const res = await fetch(`/api/admin/timecard`, {
-        method: 'DELETE',
+      const res = await fetch(`/api/admin/employees/${id}/timecard`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          employeeId: entry.employeeId,
-          clockInTime: entry.clockInTime
+          action: 'delete',
+          entryData: { clockInTime: entry.clockInTime }
         })
       });
 
@@ -472,10 +472,10 @@ export default function EmployeeTimecardPage({ params }: { params: Promise<{ id:
 
   const handleAddEntry = async (entry: Partial<TimeEntry>) => {
     try {
-      const res = await fetch(`/api/admin/timecard`, {
-        method: 'POST',
+      const res = await fetch(`/api/admin/employees/${id}/timecard`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(entry)
+        body: JSON.stringify({ action: 'add', entryData: entry })
       });
 
       if (!res.ok) throw new Error('Failed to add entry');
